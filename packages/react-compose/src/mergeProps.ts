@@ -1,6 +1,12 @@
-import { ComposePreparedOptions, MergePropsResult } from './types';
+import { ComposePreparedOptions, GenericDictionary } from './types';
 import { resolveClasses } from './resolveClasses';
 import { resolveSlotProps } from './resolveSlotProps';
+
+export type MergePropsResult<TState extends GenericDictionary> = {
+  state: TState;
+  slots: GenericDictionary;
+  slotProps: GenericDictionary;
+};
 
 /**
  * Merge props takes in state and compose options, and resolves slots and slotProps.
@@ -9,7 +15,7 @@ import { resolveSlotProps } from './resolveSlotProps';
  */
 export function mergeProps<TProps, TState = TProps>(
   state: TState,
-  options: ComposePreparedOptions<TProps, TState>,
+  options: ComposePreparedOptions<TProps>,
 ): MergePropsResult<TState> {
   const result: MergePropsResult<TState> = {
     state: state,

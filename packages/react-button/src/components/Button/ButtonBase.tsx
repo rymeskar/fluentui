@@ -1,12 +1,11 @@
 import * as React from 'react';
 import { ButtonProps } from './Button.types';
-import { compose, mergeProps } from '@fluentui/react-compose';
+import { compose, ComposePreparedOptions } from '@fluentui/react-compose';
 import { useButton } from './useButton';
 
 export const ButtonBase = compose<'button', ButtonProps, ButtonProps, {}, {}>(
-  (props, ref, options) => {
-    const { state } = options;
-    const { slots, slotProps } = mergeProps(state, options);
+  (props: ButtonProps, ref: React.Ref<HTMLButtonElement>, composeOptions: ComposePreparedOptions<ButtonProps>) => {
+    const { slots, slotProps } = useButton(props, composeOptions);
 
     return (
       <slots.root ref={ref} {...slotProps.root}>
@@ -18,7 +17,13 @@ export const ButtonBase = compose<'button', ButtonProps, ButtonProps, {}, {}>(
     );
   },
   {
+    slots: {
+      icon: 'span',
+      content: 'span',
+      loader: 'span',
+    },
     displayName: 'ButtonBase',
+
     handledProps: [
       'circular',
       'content',
@@ -33,12 +38,6 @@ export const ButtonBase = compose<'button', ButtonProps, ButtonProps, {}, {}>(
       'secondary',
       'size',
     ],
-    slots: {
-      icon: 'span',
-      content: 'span',
-      loader: 'span',
-    },
-    state: useButton,
   },
 );
 

@@ -24,7 +24,6 @@ function compose<
     (props, ref) => {
       return composeOptions.render(props, (ref as unknown) as React.Ref<HTMLDivElement>, {
         ...composeOptions,
-        state: composeOptions.state(props, composeOptions),
         slots: {
           ...composeOptions.slots,
           __self: Component,

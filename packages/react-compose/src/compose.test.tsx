@@ -1,8 +1,6 @@
 import * as React from 'react';
-import { mount, shallow } from 'enzyme';
 import compose from './compose';
-import { mergeProps } from './mergeProps';
-import { ComposePreparedOptions } from './types';
+import { mount, shallow } from 'enzyme';
 
 describe('compose', () => {
   interface ToggleProps extends React.AllHTMLAttributes<{}> {
@@ -11,17 +9,12 @@ describe('compose', () => {
     checked?: boolean;
   }
 
-  const useToggle = (props: ToggleProps) => props;
-
   const Toggle = compose<'div', ToggleProps, {}, {}, {}>(
-    (props: React.HTMLAttributes<HTMLDivElement>, ref: React.Ref<HTMLDivElement>, options: ComposePreparedOptions) => {
-      const { state } = options;
-      const { slots, slotProps } = mergeProps(state, options);
-      return <slots.root ref={ref} {...slotProps.root} />;
+    (props: React.HTMLAttributes<HTMLDivElement>, ref: React.Ref<HTMLDivElement>) => {
+      return <div ref={ref} {...props} />;
     },
     {
       slots: {},
-      state: useToggle,
       handledProps: ['checked'],
       displayName: 'Toggle',
     },
@@ -35,8 +28,8 @@ describe('compose', () => {
   });
 
   it('can recompose a component', () => {
-    const NewToggle = compose<'div', ToggleProps, {}, {}, {}>(Toggle, { displayName: 'NewToggle' });
-    const wrapper = mount(<NewToggle id="foo" />);
+    const NewToggle = compose(Toggle, { displayName: 'NewToggle' });
+    const wrapper = mount(<Toggle id="foo" />);
 
     expect(wrapper.html()).toMatch('<div id="foo"></div>');
     expect(NewToggle.displayName).toEqual('NewToggle');
@@ -73,18 +66,5 @@ describe('compose', () => {
     expect(wrapper.prop('data-allows-jsx')).toEqual(false);
     expect(composedWrapper.prop('data-mapped-prop')).toEqual('as');
     expect(composedWrapper.prop('data-allows-jsx')).toEqual(false);
-  });
-
-  it('can recompose the state of a component', () => {
-    const useNewToggle = (props: ToggleProps) => {
-      return { ...props, 'data-new-state': 'NewToggle' };
-    };
-    const NewToggle = compose<'div', ToggleProps, {}, {}, {}>(Toggle, {
-      displayName: 'NewToggle',
-      state: useNewToggle,
-    });
-    const wrapper = mount(<NewToggle id="foo" />);
-    expect(wrapper.html()).toMatch('<div id="foo" data-new-state="NewToggle"></div>');
-    expect(NewToggle.displayName).toEqual('NewToggle');
   });
 });

@@ -4,6 +4,7 @@ import { ComposeOptions } from '@fluentui/react-compose';
 
 export type SizeValue = 'smallest' | 'smaller' | 'small' | 'medium' | 'large' | 'larger' | 'largest';
 
+// tslint:disable-next-line:no-any
 export interface ButtonProps extends ComponentProps, React.HTMLAttributes<HTMLButtonElement> {
   /**
    * Shorthand icon. A shorthand prop can be a literal, object,
@@ -69,8 +70,6 @@ export interface ButtonProps extends ComponentProps, React.HTMLAttributes<HTMLBu
   /** A button can be formatted to show only text in order to indicate a less-pronounced action. */
   // text?: boolean;
 }
-
-export interface ButtonState extends ButtonProps {}
 
 export interface ButtonSlots {
   icon: React.ElementType;

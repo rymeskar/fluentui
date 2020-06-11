@@ -36,31 +36,24 @@ export interface ComponentWithAs<TElementType extends React.ElementType = 'div',
 //
 
 export type ComposedComponent<TProps = {}> = React.FunctionComponent<TProps> & {
-  fluentComposeConfig: Required<ComposePreparedOptions>;
+  fluentComposeConfig: ComposePreparedOptions;
 };
 
 export type InputComposeComponent<TProps = {}> = React.FunctionComponent<TProps> & {
-  fluentComposeConfig?: Required<ComposePreparedOptions>;
+  fluentComposeConfig?: ComposePreparedOptions;
 };
 
 export type Input<TElementType extends React.ElementType = 'div', TProps = {}> =
   | InputComposeComponent<TProps>
   | ComposeRenderFunction<TElementType, TProps & { as?: React.ElementType }>;
 
-export type ComposeRenderFunction<TElementType extends React.ElementType = 'div', TProps = {}, TState = TProps> = (
+export type ComposeRenderFunction<TElementType extends React.ElementType = 'div', TProps = {}> = (
   props: TProps,
   ref: React.Ref<TElementType extends keyof HTMLElementTagNameMap ? HTMLElementTagNameMap[TElementType] : TElementType>,
-  // tslint:disable-next-line:no-any
-  options: ComposePreparedOptions & { state: any },
+  composeOptions: ComposePreparedOptions,
 ) => React.ReactElement | null;
 
-export type ComposeOptions<
-  TInputProps = {},
-  TInputStylesProps = {},
-  TParentProps = {},
-  TParentStylesProps = {},
-  TState = TParentProps & TInputProps
-> = {
+export type ComposeOptions<TInputProps = {}, TInputStylesProps = {}, TParentProps = {}, TParentStylesProps = {}> = {
   className?: string;
 
   classes?: ClassDictionary | ClassFunction | (ClassDictionary | ClassFunction)[];
@@ -78,15 +71,6 @@ export type ComposeOptions<
   slotProps?: (props: TParentProps & TInputProps) => Record<string, object>;
 
   shorthandConfig?: ShorthandConfig<TParentProps & TInputProps>;
-
-  // tslint:disable-next-line:no-any
-  state?: (props: TState, options: ComposePreparedOptions) => any;
-};
-
-export type MergePropsResult<TState extends GenericDictionary> = {
-  state: TState;
-  slots: GenericDictionary;
-  slotProps: GenericDictionary;
 };
 
 /**
@@ -108,8 +92,7 @@ export type ClassFunction = (state: GenericDictionary, slots: GenericDictionary)
 /**
  * Merged ComposeOptions.
  */
-// tslint:disable-next-line:no-any
-export type ComposePreparedOptions<TProps = {}, TInputState = any, TParentState = TProps> = {
+export type ComposePreparedOptions<TProps = {}, TState = TProps> = {
   className: string;
   classes: (undefined | ClassDictionary | ClassFunction)[];
 
@@ -125,9 +108,6 @@ export type ComposePreparedOptions<TProps = {}, TInputState = any, TParentState 
 
   slots: Record<string, React.ElementType> & { __self: React.ElementType };
   slotProps: ((props: TProps) => Record<string, object>)[];
-
-  // tslint:disable-next-line:no-any
-  state: (props: TParentState, options: ComposePreparedOptions) => TInputState;
 
   resolveSlotProps: <TResolvedProps>(props: TResolvedProps) => Record<string, object>;
   shorthandConfig: ShorthandConfig<TProps>;
