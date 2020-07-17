@@ -84,6 +84,7 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
   const datepickerRef = React.useRef<HTMLElement>();
   const [open, setOpen] = React.useState<boolean>(false);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
+  const [formattedDate, setFormattedDate] = React.useState<string>('');
 
   const showCalendarGrid = () => {
     setOpen(true);
@@ -140,6 +141,7 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
     const targetDay = data.value;
     setSelectedDate(targetDay.originalDate);
     setOpen(false);
+    setFormattedDate(valueFormatter(targetDay.originalDate));
 
     _.invoke(props, 'onDateChange', e, { ...props, value: targetDay });
   };
@@ -158,7 +160,15 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
             error={props.isRequired && !selectedDate}
             readOnly={!props.allowTextInput}
             onClick={showCalendarGrid}
-            value={valueFormatter(selectedDate)}
+            value={formattedDate}
+            onChange={(e, { value }) => {
+              const parsedDate = props.parse(value);
+
+              setFormattedDate(value);
+              if (parsedDate) {
+                setSelectedDate(parsedDate);
+              }
+            }}
           />
           <Popup
             open={open && !props.disabled}
