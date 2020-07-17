@@ -27,6 +27,7 @@ import {
   IDatepickerOptions,
   IDateFormatting,
   DEFAULT_DATE_FORMATTING,
+  isRestrictedDate,
 } from '@fluentui/date-time-utilities';
 
 import { DatepickerCalendar, DatepickerCalendarProps } from './DatepickerCalendar';
@@ -169,10 +170,14 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
 
               setFormattedDate(value);
               if (parsedDate) {
-                setError('');
-                setSelectedDate(parsedDate);
-                // TODO: how to link to changes on selectedDate directly?
-                _.invoke(props, 'onDateChange', e, { ...props, value: parsedDate });
+                if (isRestrictedDate(parsedDate, dayGridOptions)) {
+                  setError('The selected date is from the restricted range.');
+                } else {
+                  setError('');
+                  setSelectedDate(parsedDate);
+                  // TODO: how to link to changes on selectedDate directly?
+                  _.invoke(props, 'onDateChange', e, { ...props, value: parsedDate });
+                }
               } else if (value) {
                 setError('Manually entered date is not in correct format.');
               } else if (props.isRequired && !selectedDate) {
