@@ -151,9 +151,9 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
             ...unhandledProps,
           })}
         >
-          <Input readOnly onClick={showCalendarGrid} value={valueFormatter(selectedDate)} />
+          <Input disabled={props.disabled} readOnly onClick={showCalendarGrid} value={valueFormatter(selectedDate)} />
           <Popup
-            open={open}
+            open={open && !props.disabled}
             onOpenChange={(e, { open }) => setOpen(open)}
             content={<DatepickerCalendar onDateChange={handleChange} {...dateFormatting} {...dayGridOptions} />}
             trapFocus
