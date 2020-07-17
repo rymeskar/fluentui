@@ -20,7 +20,6 @@ import { Button } from '../Button/Button';
 import { CalendarIcon } from '@fluentui/react-icons-northstar';
 import { Popup } from '../Popup/Popup';
 import {
-  IDay,
   DayOfWeek,
   FirstWeekOfYear,
   DateRangeType,
@@ -48,7 +47,7 @@ export interface DatepickerProps extends UIComponentProps, Partial<IDateFormatti
    * @param event - React's original SyntheticEvent.
    * @param data - All props and proposed value.
    */
-  onDateChange?: ComponentEventHandler<DatepickerProps & { value: IDay }>;
+  onDateChange?: ComponentEventHandler<DatepickerProps & { value: Date }>;
 
   /** String to render for button to direct the user to today's date. */
   goToToday?: string;
@@ -85,6 +84,9 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
   const [open, setOpen] = React.useState<boolean>(false);
   const [selectedDate, setSelectedDate] = React.useState<Date | undefined>();
   const [formattedDate, setFormattedDate] = React.useState<string>('');
+  const [error, setError] = React.useState<string>(() =>
+    props.isRequired && !selectedDate ? 'A date selection is required' : '',
+  );
 
   const showCalendarGrid = () => {
     setOpen(true);
@@ -141,9 +143,10 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
     const targetDay = data.value;
     setSelectedDate(targetDay.originalDate);
     setOpen(false);
+    setError('');
     setFormattedDate(valueFormatter(targetDay.originalDate));
 
-    _.invoke(props, 'onDateChange', e, { ...props, value: targetDay });
+    _.invoke(props, 'onDateChange', e, { ...props, value: targetDay.originalDate });
   };
 
   const element = (
@@ -157,7 +160,7 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
         >
           <Input
             disabled={props.disabled}
-            error={props.isRequired && !selectedDate}
+            error={!!error}
             readOnly={!props.allowTextInput}
             onClick={showCalendarGrid}
             value={formattedDate}
@@ -166,7 +169,16 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
 
               setFormattedDate(value);
               if (parsedDate) {
+                setError('');
                 setSelectedDate(parsedDate);
+                // TODO: how to link to changes on selectedDate directly?
+                _.invoke(props, 'onDateChange', e, { ...props, value: parsedDate });
+              } else if (value) {
+                setError('Manually entered date is not in correct format.');
+              } else if (props.isRequired && !selectedDate) {
+                setError('A date selection is required');
+              } else {
+                setError('');
               }
             }}
           />
