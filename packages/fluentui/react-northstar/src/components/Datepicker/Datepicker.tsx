@@ -61,6 +61,9 @@ export interface DatepickerProps extends UIComponentProps, Partial<IDateFormatti
 
   /** A render function to customize how cells are rendered in the Calendar. */
   renderHeaderCell?: ShorthandRenderFunction<any>;
+
+  /** Target dates can be also entered through the input field. */
+  allowTextInput?: boolean;
 }
 
 export type DatepickerStylesProps = never;
@@ -87,6 +90,7 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
   };
 
   const { className, design, styles, variables, formatMonthDayYear } = props;
+  const valueFormatter = date => (date ? formatMonthDayYear(date) : '');
 
   const nonNullSelectedDate = selectedDate ?? props.today ?? new Date();
 
@@ -112,8 +116,6 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
     formatMonthYear: props.formatMonthYear,
     parse: props.parse,
   };
-
-  const valueFormatter = date => (date ? formatMonthDayYear(date) : '');
 
   const ElementType = getElementType(props);
   const unhandledProps = useUnhandledProps(Datepicker.handledProps, props);
@@ -154,7 +156,7 @@ export const Datepicker: ComponentWithAs<'div', DatepickerProps> &
           <Input
             disabled={props.disabled}
             error={props.isRequired && !selectedDate}
-            readOnly
+            readOnly={!props.allowTextInput}
             onClick={showCalendarGrid}
             value={valueFormatter(selectedDate)}
           />
@@ -186,6 +188,7 @@ Datepicker.propTypes = {
   placeholder: PropTypes.string,
   renderCell: PropTypes.func,
   renderHeaderCell: PropTypes.func,
+  allowTextInput: PropTypes.bool,
 
   minDate: PropTypes.instanceOf(Date),
   maxDate: PropTypes.instanceOf(Date),
@@ -219,6 +222,8 @@ Datepicker.defaultProps = {
   firstDayOfWeek: DayOfWeek.Sunday,
   firstWeekOfYear: FirstWeekOfYear.FirstDay,
   dateRangeType: DateRangeType.Day,
+
+  allowTextInput: true,
 
   ...DEFAULT_DATE_FORMATTING,
 };
