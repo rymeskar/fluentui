@@ -194,6 +194,12 @@ DatepickerCalendarHeader.propTypes = {
   weekNumberFormatString: PropTypes.string,
   selectedDateFormatString: PropTypes.string,
   todayDateFormatString: PropTypes.string,
+  calendarCellFormatString: PropTypes.string,
+
+  inputAriaLabel: PropTypes.string,
+  inputBoundedFormatString: PropTypes.string,
+  inputMinBoundedFormatString: PropTypes.string,
+  inputMaxBoundedFormatString: PropTypes.string,
 };
 
 DatepickerCalendarHeader.defaultProps = {

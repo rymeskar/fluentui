@@ -36,6 +36,7 @@ import { DatepickerCalendarHeader, DatepickerCalendarHeaderProps } from './Datep
 import { DatepickerCalendarCellProps, DatepickerCalendarCell } from './DatepickerCalendarCell';
 import { DatepickerCalendarHeaderCellProps, DatepickerCalendarHeaderCell } from './DatepickerCalendarHeaderCell';
 import { navigateToNewDate } from './navigateToNewDate';
+import { format } from '@uifabric/utilities';
 
 export interface DatepickerCalendarProps extends UIComponentProps, Partial<ICalendarStrings>, Partial<IDayGridOptions> {
   /** Calendar can have header. */
@@ -119,6 +120,7 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
         const newNavigatedDate = navigateToNewDate(gridNavigatedDate, 'Week', 1, restrictedDatesOptions);
 
         if (!!newNavigatedDate) {
+          setShouldFocusInDayGrid(true);
           setGridNavigatedDate(newNavigatedDate);
         }
       },
@@ -127,6 +129,7 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
         const newNavigatedDate = navigateToNewDate(gridNavigatedDate, 'Week', -1, restrictedDatesOptions);
 
         if (!!newNavigatedDate) {
+          setShouldFocusInDayGrid(true);
           setGridNavigatedDate(newNavigatedDate);
         }
       },
@@ -135,6 +138,7 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
         const newNavigatedDate = navigateToNewDate(gridNavigatedDate, 'Day', 1, restrictedDatesOptions);
 
         if (!!newNavigatedDate) {
+          setShouldFocusInDayGrid(true);
           setGridNavigatedDate(newNavigatedDate);
         }
       },
@@ -143,6 +147,7 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
         const newNavigatedDate = navigateToNewDate(gridNavigatedDate, 'Day', -1, restrictedDatesOptions);
 
         if (!!newNavigatedDate) {
+          setShouldFocusInDayGrid(true);
           setGridNavigatedDate(newNavigatedDate);
         }
       },
@@ -150,8 +155,28 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
     rtl: context.rtl,
   });
 
-  // TODO: make new date instances, so they are less mutable
-  const [gridNavigatedDate, setGridNavigatedDate] = React.useState<Date>(navigatedDate || today || new Date());
+  const [gridNavigatedDate, setGridNavigatedDate] = React.useState<Date>(
+    () => new Date((navigatedDate || today || new Date()).getTime()),
+  );
+
+  const normalizeDateInGrid = (date: Date): Date => {
+    const result = new Date(date.getTime());
+    result.setDate(1);
+    return result;
+  };
+
+  const getRidOfSecondsMinutesHours = (date: Date): Date => {
+    const result = new Date(date.getTime());
+    result.setSeconds(0, 0);
+    result.setMinutes(0);
+    result.setHours(0);
+    return result;
+  };
+  const [normalizedGridDate, setNormalizedGridDate] = React.useState<Date>(() =>
+    normalizeDateInGrid(gridNavigatedDate),
+  );
+
+  const [shouldFocusInDayGrid, setShouldFocusInDayGrid] = React.useState<boolean>(true);
 
   const { classes } = useStyles<DatepickerCalendarStylesProps>(DatepickerCalendar.displayName, {
     className: datepickerCalendarClassName,
@@ -165,8 +190,8 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
   });
 
   const dayGridOptions = {
-    selectedDate: selectedDate || today || new Date(),
-    navigatedDate: gridNavigatedDate,
+    selectedDate: getRidOfSecondsMinutesHours(selectedDate || today || new Date()),
+    navigatedDate: normalizedGridDate,
     weeksToShow: props.weeksToShow,
     firstDayOfWeek: props.firstDayOfWeek,
     firstWeekOfYear: props.firstWeekOfYear,
@@ -178,8 +203,24 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
     ...restrictedDatesOptions,
   };
 
-  const grid = getDayGrid(dayGridOptions);
-  const visibledGrid = grid.slice(1, grid.length - 1); // slicing off first and last weeks, cause we don't use them for transitions
+  const visibleGrid = React.useMemo<IDay[][]>(() => {
+    const grid = getDayGrid(dayGridOptions);
+    return grid.slice(1, grid.length - 1); // slicing off first and last weeks, cause we don't use them for transitions
+  }, [dayGridOptions]);
+
+  React.useEffect(() => {
+    const newNormalizedDate = normalizeDateInGrid(gridNavigatedDate);
+
+    if (compareDatePart(newNormalizedDate, normalizedGridDate)) {
+      // Do not change the grid immediately the month changes but only once the date stops being visible.
+      const gridContainsNavigatedDate = visibleGrid.find(week =>
+        week.find(day => compareDatePart(day.originalDate, gridNavigatedDate) === 0),
+      );
+      if (!gridContainsNavigatedDate) {
+        setNormalizedGridDate(newNormalizedDate);
+      }
+    }
+  }, [gridNavigatedDate, visibleGrid, normalizedGridDate]);
 
   const dateFormatting = {
     formatDay: props.formatDay,
@@ -213,19 +254,23 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
   const focusDateRef = React.useRef(null);
 
   const changeMonth = (nextMonth: boolean) => {
-    const newNavigatedDate = navigateToNewDate(gridNavigatedDate, 'Month', nextMonth ? 1 : -1, restrictedDatesOptions);
+    const newNavigatedDate = navigateToNewDate(normalizedGridDate, 'Month', nextMonth ? 1 : -1, restrictedDatesOptions);
 
     if (!!newNavigatedDate) {
       setGridNavigatedDate(newNavigatedDate);
+      setShouldFocusInDayGrid(false);
+      setNormalizedGridDate(normalizeDateInGrid(newNavigatedDate));
     }
   };
 
-  const prevMonthOutOfBounds = minDate ? compareDatePart(minDate, getMonthStart(gridNavigatedDate)) >= 0 : false;
-  const nextMonthOutOfBounds = maxDate ? compareDatePart(getMonthEnd(gridNavigatedDate), maxDate) >= 0 : false;
+  const prevMonthOutOfBounds = minDate ? compareDatePart(minDate, getMonthStart(normalizedGridDate)) >= 0 : false;
+  const nextMonthOutOfBounds = maxDate ? compareDatePart(getMonthEnd(normalizedGridDate), maxDate) >= 0 : false;
 
   React.useEffect(() => {
-    focusDateRef.current?.focus();
-  }, [grid]);
+    if (shouldFocusInDayGrid) {
+      focusDateRef.current?.focus();
+    }
+  }, [visibleGrid, shouldFocusInDayGrid]);
 
   const renderWeekRow = (week: IDay[]) =>
     _.map(week, (day: IDay) =>
@@ -234,12 +279,17 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
           getA11yProps('calendarCell', {
             content: day.date,
             key: day.key,
-            'aria-label': formatMonthDayYear(day.originalDate, dateFormatting),
+            'aria-label': format(
+              props.calendarCellFormatString,
+              formatMonthDayYear(day.originalDate, dateFormatting),
+              days[day.originalDate.getDay()],
+            ),
             selected: day.isSelected,
             disabled: !day.isInBounds,
             quiet: !day.isInMonth,
             today: compareDates(day.originalDate, props.today ?? new Date()),
             ref: compareDates(gridNavigatedDate, day.originalDate) ? focusDateRef : null,
+            onFocus: () => setGridNavigatedDate(day.originalDate),
           }),
         overrideProps: (predefinedProps: DatepickerCalendarCellProps): DatepickerCalendarCellProps => ({
           onClick: e => {
@@ -260,8 +310,8 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
       >
         {createShorthand(DatepickerCalendarHeader, header, {
           defaultProps: () => ({
-            label: formatMonthYear(gridNavigatedDate, dateFormatting),
-            'aria-label': formatMonthYear(gridNavigatedDate, dateFormatting),
+            label: formatMonthYear(normalizedGridDate, dateFormatting),
+            'aria-label': formatMonthYear(normalizedGridDate, dateFormatting),
             disabledNextButton: nextMonthOutOfBounds,
             disabledPreviousButton: prevMonthOutOfBounds,
             ...dateFormatting,
@@ -283,7 +333,7 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
           {
             defaultProps: () =>
               getA11yProps('calendarGrid', {
-                rows: visibledGrid.length + 1, // additional row for header
+                rows: visibleGrid.length + 1, // additional row for header
                 columns: DAYS_IN_WEEK,
                 content: (
                   <>
@@ -297,7 +347,7 @@ export const DatepickerCalendar: ComponentWithAs<'div', DatepickerCalendarProps>
                           }),
                       }),
                     )}
-                    {_.map(visibledGrid, week => renderWeekRow(week))}
+                    {_.map(visibleGrid, week => renderWeekRow(week))}
                   </>
                 ),
               }),
@@ -364,6 +414,12 @@ DatepickerCalendar.propTypes = {
   weekNumberFormatString: PropTypes.string,
   selectedDateFormatString: PropTypes.string,
   todayDateFormatString: PropTypes.string,
+  calendarCellFormatString: PropTypes.string,
+
+  inputAriaLabel: PropTypes.string,
+  inputBoundedFormatString: PropTypes.string,
+  inputMinBoundedFormatString: PropTypes.string,
+  inputMaxBoundedFormatString: PropTypes.string,
 };
 
 DatepickerCalendar.defaultProps = {
